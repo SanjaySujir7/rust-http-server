@@ -2,8 +2,10 @@ use std::{ io::{Read, Write}, net::{TcpListener, TcpStream}};
 mod logger;
 mod header;
 mod parser;
+mod handle_request;
 
-use header::HttpStatus;
+
+use crate::{header::ResponseHeaders, parser::RequestData};
 
 
 /* 
@@ -12,12 +14,12 @@ use header::HttpStatus;
 
 
 
-fn write_request(stream : &mut TcpStream){
+fn write_request(stream : &mut TcpStream,request_header : &RequestData){
+ 
 
-    let content : String = String::from("<h1> this is from rust and this is to test how much data this can send </h1>");
-    let content_length = content.len();
+    let mut handle : ResponseHeaders = handle_request::handle_route(request_header);
 
-    let _buffer = format!("HTTP/1.1 {} OK\r\nContent-Length: {} \r\n\r\n{}",HttpStatus::Ok as u16,content_length.to_string(),content);
+    let _buffer = handle.create_response();
 
     if let Err(e) = stream.write_all(_buffer.as_bytes()) {
         let error = format!("Failed to send data {}",e);
@@ -31,7 +33,7 @@ fn write_request(stream : &mut TcpStream){
 
 
 // to read the bytes form the request 
-fn read_incoming_request(stream : &mut TcpStream){
+fn read_incoming_request(stream : &mut TcpStream) -> RequestData{
     let mut buffer = [0;1024];
 
     let bytes_read = stream.read(&mut buffer).unwrap();
@@ -41,12 +43,12 @@ fn read_incoming_request(stream : &mut TcpStream){
 
     let request = String::from_utf8_lossy(&buffer[..bytes_read]);
 
-    parser::parse_request(request.as_ref());
-
+    let request_data : RequestData = parser::parse_request(request.as_ref());
     
 
     println!("{}", request);
 
+    request_data
 
 }
 
@@ -69,9 +71,9 @@ fn tcp_listener(address : &str, port : u16){
                 
                 let mut stream = _stream;
 
-                read_incoming_request(&mut stream);
+                let request_headers : RequestData = read_incoming_request(&mut stream);
 
-                write_request(&mut stream);
+                write_request(&mut stream,&request_headers);
 
             }
 

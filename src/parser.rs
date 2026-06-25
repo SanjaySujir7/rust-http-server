@@ -5,13 +5,13 @@
 
 
 #[derive(Default)]
-struct RequestData {
-    request_type : String,
-    route : String,
-    http_type : String,
-    host : String,
-    connection : String,
-    user_agent : String,
+pub struct RequestData {
+    pub request_type : String,
+    pub route : String,
+    pub http_type : String,
+    pub host : String,
+    pub connection : String,
+    pub user_agent : String,
 
 }
 
@@ -40,7 +40,7 @@ fn get_method (request : &str, struct_request : &mut RequestData){
 
 }
 
-pub fn parse_request(request : &str){
+pub fn parse_request(request : &str) -> RequestData{
 
     let parts : Vec<&str> = request.split("\r\n").collect();
     let mut request_data = RequestData::default();
@@ -67,5 +67,7 @@ pub fn parse_request(request : &str){
             }
         }
    }
+
+   request_data
     
 }
