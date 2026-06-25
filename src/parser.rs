@@ -3,7 +3,6 @@
     this file will hold the http parser and this is one of the important file going to be :)
 */
 
-
 #[derive(Default)]
 pub struct RequestData {
     pub request_type : String,
@@ -12,7 +11,7 @@ pub struct RequestData {
     pub host : String,
     pub connection : String,
     pub user_agent : String,
-
+    pub ip_address : String
 }
 
 // request = "GET /favicon.ico HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nConnection: keep-alive"
@@ -70,4 +69,20 @@ pub fn parse_request(request : &str) -> RequestData{
 
    request_data
     
+}
+
+
+pub fn ip_parser(socket_address : &str) -> String{
+
+    let _ip = socket_address.split_once(":");
+    let ip_address : String;
+
+    if let Some((key,_)) = socket_address.split_once(":"){
+        ip_address = key.to_string();
+    }
+    else{
+        ip_address = "127.0.0.1".to_string();
+    }
+
+    ip_address
 }

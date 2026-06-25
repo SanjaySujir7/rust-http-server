@@ -33,7 +33,7 @@ fn write_request(stream : &mut TcpStream,request_header : &RequestData){
 
 
 // to read the bytes form the request 
-fn read_incoming_request(stream : &mut TcpStream) -> RequestData{
+fn read_incoming_request(stream : &mut TcpStream, ip_address : String) -> RequestData{
     let mut buffer = [0;1024];
 
     let bytes_read = stream.read(&mut buffer).unwrap();
@@ -43,8 +43,8 @@ fn read_incoming_request(stream : &mut TcpStream) -> RequestData{
 
     let request = String::from_utf8_lossy(&buffer[..bytes_read]);
 
-    let request_data : RequestData = parser::parse_request(request.as_ref());
-    
+    let mut request_data : RequestData = parser::parse_request(request.as_ref());
+    request_data.ip_address = ip_address;
 
     println!("{}", request);
 
@@ -52,6 +52,18 @@ fn read_incoming_request(stream : &mut TcpStream) -> RequestData{
 
 }
 
+
+fn get_client_address(stream : &TcpStream) -> String{
+
+    let mut ip_address : String = String::from("127.0.0.1");
+
+    if let Ok(address) = stream.peer_addr() {
+        ip_address = parser::ip_parser(&address.to_string());
+    }
+    
+
+    ip_address
+}
 
 // this will listne to the port and adress given
 fn tcp_listener(address : &str, port : u16){
@@ -71,7 +83,11 @@ fn tcp_listener(address : &str, port : u16){
                 
                 let mut stream = _stream;
 
-                let request_headers : RequestData = read_incoming_request(&mut stream);
+                let ip_address = get_client_address(&stream);
+
+                let request_headers : RequestData = read_incoming_request(&mut stream,ip_address);
+
+                println!("{}",request_headers.ip_address);
 
                 write_request(&mut stream,&request_headers);
 
