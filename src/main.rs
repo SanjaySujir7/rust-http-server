@@ -5,7 +5,7 @@ mod parser;
 mod handle_request;
 
 
-use crate::{header::ResponseHeaders, parser::RequestData};
+use crate::{header::Response, parser::RequestData};
 
 
 /* 
@@ -17,14 +17,17 @@ use crate::{header::ResponseHeaders, parser::RequestData};
 fn write_request(stream : &mut TcpStream,request_header : &RequestData){
  
 
-    let mut handle : ResponseHeaders = handle_request::handle_route(request_header);
+    let mut handle : Response = handle_request::handle_route(request_header);
 
-    let _buffer = handle.create_response();
+    let _buffer = handle.build();
 
     if let Err(e) = stream.write_all(_buffer.as_bytes()) {
         let error = format!("Failed to send data {}",e);
 
         logger::log_error(&error);
+    }
+    else {
+        logger::response_log(&handle);
     }
 
 }
@@ -38,15 +41,14 @@ fn read_incoming_request(stream : &mut TcpStream, ip_address : String) -> Reques
 
     let bytes_read = stream.read(&mut buffer).unwrap();
 
-    let log = format!("Bytes readed from incoming requst is {}",bytes_read);
-    logger::log(&log);
-
     let request = String::from_utf8_lossy(&buffer[..bytes_read]);
 
     let mut request_data : RequestData = parser::parse_request(request.as_ref());
     request_data.ip_address = ip_address;
 
-    println!("{}", request);
+    logger::connection_log(&request_data,&bytes_read);
+
+    // println!("{}", request);
 
     request_data
 
@@ -78,16 +80,12 @@ fn tcp_listener(address : &str, port : u16){
          match _stream {
 
             Ok(_stream) => {
-
-                logger::connection_log();
                 
                 let mut stream = _stream;
 
                 let ip_address = get_client_address(&stream);
 
                 let request_headers : RequestData = read_incoming_request(&mut stream,ip_address);
-
-                println!("{}",request_headers.ip_address);
 
                 write_request(&mut stream,&request_headers);
 
