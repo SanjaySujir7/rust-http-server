@@ -37,7 +37,7 @@ fn write_request(stream : &mut TcpStream,request_header : &RequestData){
 
 // to read the bytes form the request 
 fn read_incoming_request(stream : &mut TcpStream, ip_address : &str) -> Result<RequestData,bool> {
-    let mut buffer = [0;1024];
+    let mut buffer = [0;2024];
 
     if let Err(_) = stream.set_read_timeout(Some(Duration::from_secs(15))) {
         return  Err(false);

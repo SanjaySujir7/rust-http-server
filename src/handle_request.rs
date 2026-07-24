@@ -8,15 +8,22 @@ pub fn handle_route(request_header : &RequestData) -> Response{
     let mut response = Response::new();
 
     if request_header.route == "/" {
-        response.html_response("Hello this is 200 response from the rust yea yea");
+        response.html_response("Hello this is 200 response from the rust yea");
     }
 
     else if request_header.route == "/home" {
-        response.render_html("home.html");
+        response.html_response("Welcome to Home page !");
     }
 
     else if request_header.route == "/login" {
-        response.redirect("/register","");
+        response.render_html("home.html");
+        
+    }
+
+    else if request_header.route == "/api/login" {
+        println!("{:#?}",request_header.data);
+        response.redirect("/home","");
+
     }
 
     else if request_header.route == "/register" {

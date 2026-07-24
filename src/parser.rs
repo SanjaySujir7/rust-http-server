@@ -3,6 +3,8 @@
     this file will hold the http parser and this is one of the important file going to be :)
 */
 
+use std::{collections::HashMap, i32};
+
 #[derive(Default)]
 pub struct RequestData {
     pub request_type : String,
@@ -11,7 +13,9 @@ pub struct RequestData {
     pub host : String,
     pub connection : String,
     pub user_agent : String,
-    pub ip_address : String
+    pub ip_address : String,
+    content_length : i32,
+    pub data : HashMap<String,String>
 }
 
 // request = "GET /favicon.ico HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nConnection: keep-alive"
@@ -25,7 +29,9 @@ fn get_method (request : &str, struct_request : &mut RequestData){
             struct_request.request_type = String::from("GET");
 
         }
-
+        else if m == "POST"{
+            struct_request.request_type = String::from("POST");
+        }
 
     }
 
@@ -62,15 +68,42 @@ pub fn parse_request(request : &str) -> RequestData{
                     request_data.user_agent = value.trim().to_string();
                 }
 
+                "Content-Length" => {
+                    if let Ok(_length) = value[1..
+                    ].parse::<i32>() {
+                        request_data.content_length = _length;
+                    }
+                }
+
                 _ => {}
             }
         }
+        
    }
+   let _data : Vec<&str> = request.split("\r\n\r\n").collect();
 
+   parse_form_data(&mut request_data,_data[1]);
    request_data
     
 }
 
+
+
+pub fn parse_form_data(struct_request : &mut RequestData,data : &str){
+
+    if struct_request.request_type == "POST" {
+        let _length = struct_request.content_length as usize;
+
+
+        let _parts : Vec<&str> = data[.._length].split("&").collect();
+
+        for part in _parts {
+            if let Some((key , value)) = part.split_once("=") {
+                struct_request.data.insert(key.to_string(), value.to_string());
+            }
+        }
+    }
+}
 
 pub fn ip_parser(socket_address : &str) -> String{
 
