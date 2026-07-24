@@ -1,12 +1,16 @@
 use chrono::Utc;
+use std::fs;
+use crate::logger::log_error;
 
 const SERVER_NAME: &str = "rust_server[sanjay]/1.0";
+const TEMPLATES_PATH : &str = "templates/";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpStatus {
     Ok,
     NotFound,
     Redirect,
+    ServerError,
 }
 
 impl HttpStatus {
@@ -15,6 +19,7 @@ impl HttpStatus {
             Self::Ok => 200,
             Self::NotFound => 404,
             Self::Redirect => 302,
+            Self::ServerError => 500,
         }
     }
 
@@ -23,6 +28,7 @@ impl HttpStatus {
             Self::Ok => "OK",
             Self::NotFound => "Not Found",
             Self::Redirect => "Found",
+            Self::ServerError => "Internal Server Error",
         }
     }
 }
@@ -48,24 +54,55 @@ impl Response {
         }
     }
 
-    pub fn set_content_type(&mut self, content_type: &str) {
-        self.content_type = content_type.into();
+    fn set_html_content(&mut self,content : &str){
+        self.content_type = "text/html".into();
+        self.content = content.into();
     }
 
-    pub fn set_status(&mut self, status: HttpStatus) {
-        self.status = status;
+
+    pub fn html_response(&mut self, body : &str){
+        self.set_html_content(body);
+        self.status = HttpStatus::Ok;
     }
 
-    pub fn set_body(&mut self, body: &str) {
-        self.content = body.into();
+    pub fn not_found(&mut self,body : &str){
+        self.status = HttpStatus::NotFound;
+        self.set_html_content(body);
+        
     }
 
-    pub fn redirect(&mut self, location: &str) {
+    pub fn redirect(&mut self, location: &str,body : &str) {
         self.status = HttpStatus::Redirect;
         self.location = Some(location.into());
+        self.set_html_content(body);
+
     }
 
-    pub fn build(&mut self) -> String {
+    fn internal_server_error(&mut self) {
+
+        self.status = HttpStatus::ServerError;
+        self.set_html_content("<h1>Server Error : try again later ! </h1>");
+    }
+
+    pub fn render_html(&mut self , filename : &str){
+        let mut file = filename.to_string();
+        file.insert_str(0, TEMPLATES_PATH);
+
+        let contents = fs::read_to_string(file);
+
+        match contents {
+            Ok(content) => {
+                self.set_html_content(&content);
+            },
+
+            Err(e) => {
+                self.internal_server_error();
+                log_error(&e.to_string());
+            }
+        }
+    }
+
+    pub fn build(&mut self) -> String{
         let date = Utc::now()
             .format("%a, %d %b %Y %H:%M:%S GMT");
 
@@ -95,5 +132,6 @@ impl Response {
         ));
 
         response
+
     }
 }

@@ -1,4 +1,4 @@
-use std::{ io::{Read, Write}, net::{TcpListener, TcpStream}};
+use std::{io::{Read, Write}, net::{TcpListener, TcpStream},time::Duration};
 mod logger;
 mod header;
 mod parser;
@@ -36,21 +36,32 @@ fn write_request(stream : &mut TcpStream,request_header : &RequestData){
 
 
 // to read the bytes form the request 
-fn read_incoming_request(stream : &mut TcpStream, ip_address : String) -> RequestData{
+fn read_incoming_request(stream : &mut TcpStream, ip_address : &str) -> Result<RequestData,bool> {
     let mut buffer = [0;1024];
 
-    let bytes_read = stream.read(&mut buffer).unwrap();
+    if let Err(_) = stream.set_read_timeout(Some(Duration::from_secs(15))) {
+        return  Err(false);
+    }
+    
+    if let Ok(bytes_read ) = stream.read(&mut buffer) {
+        if bytes_read == 0 {
+            return Err(false);
+        }
+        let request = String::from_utf8_lossy(&buffer[..bytes_read]);
 
-    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
+        let mut request_data : RequestData = parser::parse_request(request.as_ref());
+        request_data.ip_address = ip_address.into();
 
-    let mut request_data : RequestData = parser::parse_request(request.as_ref());
-    request_data.ip_address = ip_address;
+        logger::connection_log(&request_data,&bytes_read);
 
-    logger::connection_log(&request_data,&bytes_read);
+        // println!("{}", request);
 
-    // println!("{}", request);
+        Ok(request_data)
+    }
 
-    request_data
+    else{
+        return  Err(false);
+    }
 
 }
 
@@ -83,11 +94,24 @@ fn tcp_listener(address : &str, port : u16){
                 
                 let mut stream = _stream;
 
+                
                 let ip_address = get_client_address(&stream);
+                // let request_headers : = read_incoming_request(&mut stream,ip_address);
+                loop{
 
-                let request_headers : RequestData = read_incoming_request(&mut stream,ip_address);
-
-                write_request(&mut stream,&request_headers);
+                    if let Ok(request_headers) = read_incoming_request(&mut stream, &ip_address) {
+                        write_request(&mut stream,&request_headers);
+                        
+                        if request_headers.connection != "keep-alive" {
+                            break;
+                        }
+                    }
+                    else {
+                        println!("connection terminated !");
+                        break;
+                    }
+                }
+                
 
             }
 

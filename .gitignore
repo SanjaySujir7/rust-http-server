@@ -2,3 +2,5 @@
 *.exe
 *.txt
 *.log
+templates/
+static/
