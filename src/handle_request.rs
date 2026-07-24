@@ -2,6 +2,32 @@ use crate::parser::RequestData;
 use crate::header:: Response;
 
 
+fn handle_login(request : &RequestData) -> bool{
+    match request.data.get("username"){
+
+        Some(name) => {
+            if let Some(password) = request.data.get("password") {
+                if password == "test123" && name == "sanjay" {
+                    return true;
+                }
+                else {
+                    return  false;
+                }
+            }
+            else {
+                println!("No Password is specified !");
+                return false;
+            }
+        },
+
+        None => {
+            println!("No username found !");
+            return false;
+        
+        }
+    }
+}
+
 
 pub fn handle_route(request_header : &RequestData) -> Response{
 
@@ -12,7 +38,7 @@ pub fn handle_route(request_header : &RequestData) -> Response{
     }
 
     else if request_header.route == "/home" {
-        response.html_response("Welcome to Home page !");
+        response.html_response("<h1>Welcome to Home page !<h2>");
     }
 
     else if request_header.route == "/login" {
@@ -21,8 +47,14 @@ pub fn handle_route(request_header : &RequestData) -> Response{
     }
 
     else if request_header.route == "/api/login" {
-        println!("{:#?}",request_header.data);
-        response.redirect("/home","");
+        let _result: bool = handle_login(&request_header);
+
+        if _result {
+            response.redirect("/home", "");
+        }
+        else {
+            response.html_response("<h2>Wrong username or password try again !</h2>");
+        }
 
     }
 
