@@ -54,7 +54,7 @@ fn read_incoming_request(stream : &mut TcpStream, ip_address : &str) -> Result<R
 
         logger::connection_log(&request_data,&bytes_read);
 
-        println!("{}", request);
+        // println!("{}", request);
 
         Ok(request_data)
     }
@@ -78,7 +78,7 @@ fn get_client_address(stream : &TcpStream) -> String{
     ip_address
 }
 
-// this will listne to the port and adress given
+// this will listen to the port and addres given
 fn tcp_listener(address : &str, port : u16){
 
     let adress_and_port :String = format!("{}:{}",address,port);
@@ -103,6 +103,7 @@ fn tcp_listener(address : &str, port : u16){
                         write_request(&mut stream,&request_headers);
                         
                         if request_headers.connection != "keep-alive" {
+                            println!("connection termiated!");
                             break;
                         }
                     }

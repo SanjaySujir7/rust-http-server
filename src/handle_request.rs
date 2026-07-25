@@ -38,11 +38,20 @@ pub fn handle_route(request_header : &RequestData) -> Response{
     }
 
     else if request_header.route == "/home" {
-        response.html_response("<h1>Welcome to Home page !<h2>");
+
+        if let Some(name) = request_header.cookie.get("user") {
+            let _response_text = format!("<h1> Hello {} Welcome to Home page !",name);
+            response.html_response(&_response_text);
+        }
+        else {
+            response.redirect("/login", "login in ");
+        }
+        
     }
 
     else if request_header.route == "/login" {
-        response.render_html("home.html");
+
+        response.render_html("login.html");
         
     }
 

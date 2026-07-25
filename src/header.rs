@@ -150,7 +150,7 @@ impl Response {
 
         response.push_str(&format!("\r\n{}",self.content));
 
-        println!("the response is : {}",&response);
+        // println!("the response is : {}",&response);
         response
 
     }

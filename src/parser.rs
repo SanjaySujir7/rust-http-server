@@ -15,7 +15,8 @@ pub struct RequestData {
     pub user_agent : String,
     pub ip_address : String,
     content_length : i32,
-    pub data : HashMap<String,String>
+    pub data : HashMap<String,String>,
+    pub cookie : HashMap<String,String>,
 }
 
 // request = "GET /favicon.ico HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nConnection: keep-alive"
@@ -74,6 +75,9 @@ pub fn parse_request(request : &str) -> RequestData{
                         request_data.content_length = _length;
                     }
                 }
+                "Cookie" => {
+                    parse_cookie(&mut request_data, &value.to_string());
+                }
 
                 _ => {}
             }
@@ -89,7 +93,7 @@ pub fn parse_request(request : &str) -> RequestData{
 
 
 
-pub fn parse_form_data(struct_request : &mut RequestData,data : &str){
+fn parse_form_data(struct_request : &mut RequestData,data : &str){
 
     if struct_request.request_type == "POST" {
         let _length = struct_request.content_length as usize;
@@ -104,6 +108,18 @@ pub fn parse_form_data(struct_request : &mut RequestData,data : &str){
         }
     }
 }
+
+fn parse_cookie(struct_request : &mut RequestData, data : &str){
+
+    let _parts = data.trim().split(";");
+
+    for line in _parts {
+        if let  Some((_cookie,_value)) = line.split_once("=") {
+            struct_request.cookie.insert(_cookie.trim().into(), _value.into());
+        }
+    }
+}
+
 
 pub fn ip_parser(socket_address : &str) -> String{
 
