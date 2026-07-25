@@ -40,6 +40,7 @@ pub struct Response {
     pub content_type: String,
     pub content_length : usize,
     pub location: Option<String>,
+    pub cookie : String,
 }
 
 impl Response {
@@ -51,6 +52,7 @@ impl Response {
             content_type: String::new(),
             content_length : 0,
             location: None,
+            cookie : String::new(),
         }
     }
 
@@ -102,6 +104,18 @@ impl Response {
         }
     }
 
+    pub fn set_cookie(&mut self , key : &str,value : &str,http : bool){
+
+        let _cookie_formated :String = format!("{key}={value};");
+
+        self.cookie.push_str(&_cookie_formated);
+        self.cookie.push_str(" path=/;");
+
+        if http {
+            self.cookie.push_str(" HttpOnly");
+        }
+    }
+
     pub fn build(&mut self) -> String{
         let date = Utc::now()
             .format("%a, %d %b %Y %H:%M:%S GMT");
@@ -123,14 +137,20 @@ impl Response {
              Server: {}\r\n\
              Content-Type: {}\r\n\
              Content-Length: {}\r\n\
-             \r\n{}",
+             ",
             date,
             self.server,
             self.content_type,
             self.content_length,
-            self.content
         ));
 
+        if !self.cookie.is_empty() {
+            response.push_str(&format!("Set-Cookie: {}\r\n",self.cookie));
+        }
+
+        response.push_str(&format!("\r\n{}",self.content));
+
+        println!("the response is : {}",&response);
         response
 
     }

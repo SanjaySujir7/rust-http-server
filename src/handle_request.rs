@@ -50,6 +50,7 @@ pub fn handle_route(request_header : &RequestData) -> Response{
         let _result: bool = handle_login(&request_header);
 
         if _result {
+            response.set_cookie("user",request_header.data.get("username").unwrap_or(&"none".to_string()),true);
             response.redirect("/home", "");
         }
         else {

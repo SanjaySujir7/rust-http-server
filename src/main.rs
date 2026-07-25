@@ -54,7 +54,7 @@ fn read_incoming_request(stream : &mut TcpStream, ip_address : &str) -> Result<R
 
         logger::connection_log(&request_data,&bytes_read);
 
-        // println!("{}", request);
+        println!("{}", request);
 
         Ok(request_data)
     }
